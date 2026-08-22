@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity() {
             contentResolver.query(uri, null, null, null, null)?.use { c ->
                 if (c.moveToFirst()) {
                     val idx = c.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    if (idx >= 0) name = c.getString(idx)
+                    if (idx >= 0) c.getString(idx)?.let { name = it }
                 }
             }
         } catch (e: Exception) {}
@@ -205,12 +205,11 @@ class MainActivity : AppCompatActivity() {
 
     private val deviceId: String
         get() {
-            var id = prefs.getString("deviceId", "")
-            if (id.isEmpty()) {
-                id = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-                    ?: "设备-" + (1000..9999).random()
-                prefs.edit().putString("deviceId", id).apply()
-            }
+            val saved = prefs.getString("deviceId", null)
+            if (saved != null && saved.isNotEmpty()) return saved
+            val id = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                ?: "设备-" + (1000..9999).random()
+            prefs.edit().putString("deviceId", id).apply()
             return id
         }
 
