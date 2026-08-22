@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>文件助手</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ededed">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="title">文件助手</div>
+      <div class="subtitle" id="lan-ip">加载中…</div>
+    </header>
+    <main class="chat" id="chat">
+      <div class="empty-tip" id="empty-tip">在下方输入文字或发送文件，消息会实时同步到所有设备</div>
+    </main>
+    <footer class="input-bar">
+      <button class="icon-btn" id="file-btn" title="发送文件">📎</button>
+      <input type="text" id="input" placeholder="输入文字…" autocomplete="off" enterkeyhint="send">
+      <button class="send-btn" id="send-btn">发送</button>
+      <input type="file" id="file-input" hidden multiple>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

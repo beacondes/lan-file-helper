@@ -1,0 +1,14 @@
+{
+  "name": "lan-file-helper",
+  "version": "1.0.0",
+  "description": "局域网文件助手：Windows 端服务 + 安卓 PWA，局域网内传输文本和文件（仿微信文件助手）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "文件助手",
+  "short_name": "文件助手",
+  "description": "局域网文件传输助手",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ededed",
+  "theme_color": "#07c160",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
