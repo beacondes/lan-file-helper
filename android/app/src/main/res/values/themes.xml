@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.LanFileHelper" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">#07c160</item>
+        <item name="colorPrimaryDark">#05a04e</item>
+        <item name="colorAccent">#07c160</item>
+        <item name="android:statusBarColor">#f7f7f7</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
