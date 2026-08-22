@@ -16,8 +16,10 @@ const PORT = process.env.PORT || 3000;
 const isPkg = typeof process.pkg !== 'undefined';
 const baseDir = isPkg ? path.dirname(process.execPath) : __dirname;
 const PUBLIC_DIR = path.join(baseDir, 'public');
-const UPLOAD_DIR = path.join(baseDir, 'uploads');
-const DATA_FILE = path.join(baseDir, 'messages.json');
+// 数据目录：优先用 DATA_DIR 环境变量（Windows 服务安装时指向用户「下载」目录），否则用程序目录
+const DATA_DIR = process.env.DATA_DIR || baseDir;
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+const DATA_FILE = path.join(DATA_DIR, 'messages.json');
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -44,15 +46,24 @@ const upload = multer({ dest: UPLOAD_DIR, limits: { fileSize: 2 * 1024 * 1024 * 
 app.post('/api/upload', upload.single('file'), (req, res) => {
   const file = req.file;
   if (!file) return res.status(400).json({ error: '未收到文件' });
-  const ext = path.extname(file.originalname);
-  const newPath = file.path + ext;
-  fs.renameSync(file.path, newPath);
+  // 文件名转码（multer 用 latin1 解析，中文需转回 utf8）+ 去路径 + 重名加序号
+  const rawName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+  const base = path.basename(rawName);
+  const ext = path.extname(base);
+  const stem = path.basename(base, ext);
+  let finalName = base;
+  let i = 1;
+  while (fs.existsSync(path.join(UPLOAD_DIR, finalName))) {
+    finalName = stem + '(' + i + ')' + ext;
+    i++;
+  }
+  fs.renameSync(file.path, path.join(UPLOAD_DIR, finalName));
   const msg = {
     id: crypto.randomUUID(),
     type: 'file',
-    name: file.originalname,
+    name: base,
     size: file.size,
-    url: '/uploads/' + path.basename(newPath),
+    url: '/uploads/' + finalName,
     device: req.body.device || '未知设备',
     timestamp: Date.now()
   };
