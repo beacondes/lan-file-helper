@@ -27,8 +27,24 @@ jobs:
         working-directory: android
         run: gradle assembleRelease
 
+      - name: 签名 APK
+        working-directory: android
+        run: |
+          keytool -genkeypair -v -keystore release.keystore -alias lanfile \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android123 -keypass android123 \
+            -dname "CN=LanFileHelper, OU=Dev, O=Dev, L=City, ST=State, C=CN"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | tail -1)
+          "$BT/zipalign" -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
+          "$BT/apksigner" sign \
+            --ks release.keystore --ks-key-alias lanfile \
+            --ks-pass pass:android123 --key-pass pass:android123 \
+            --out app-release.apk app-release-aligned.apk
+          "$BT/apksigner" verify app-release.apk
+          echo "签名完成: $(ls -la app-release.apk)"
+
       - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
           name: lan-file-helper-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: android/app-release.apk
