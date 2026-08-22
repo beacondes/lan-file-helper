@@ -12,8 +12,12 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-const DATA_FILE = path.join(__dirname, 'messages.json');
+// 打包成 exe（pkg）后，数据/静态资源放在 exe 同目录；普通 node 运行则用项目目录
+const isPkg = typeof process.pkg !== 'undefined';
+const baseDir = isPkg ? path.dirname(process.execPath) : __dirname;
+const PUBLIC_DIR = path.join(baseDir, 'public');
+const UPLOAD_DIR = path.join(baseDir, 'uploads');
+const DATA_FILE = path.join(baseDir, 'messages.json');
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -31,7 +35,7 @@ function saveMessages() {
 }
 
 // —— 静态资源 ——
-app.use(express.static('public'));
+app.use(express.static(PUBLIC_DIR));
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 // —— 文件上传（最大 2GB）——
