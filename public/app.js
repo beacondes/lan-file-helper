@@ -8,7 +8,7 @@ if (!deviceId) {
 }
 
 const chat = $('chat');
-const emptyTip = $('empty-tip');
+let emptyTip = $('empty-tip');
 
 function escapeHtml(s) {
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -32,7 +32,12 @@ const isImage = n => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(n);
 const isVideo = n => /\.(mp4|webm|mov|m4v)$/i.test(n);
 const isAudio = n => /\.(mp3|wav|ogg|m4a|flac)$/i.test(n);
 
+// 已渲染消息去重（乐观更新 + WS 广播都会触发，避免重复）
+const renderedIds = new Set();
+
 function renderMessage(m) {
+  if (renderedIds.has(m.id)) return;
+  renderedIds.add(m.id);
   if (emptyTip) { emptyTip.remove(); emptyTip = null; }
   const mine = m.device === deviceId;
   const el = document.createElement('div');
@@ -61,34 +66,58 @@ function renderMessage(m) {
 
 function scrollToBottom() { chat.scrollTop = chat.scrollHeight; }
 
+// —— 连接状态指示 ——
+let wsConnected = false;
+function updateStatus() {
+  const dot = $('status-dot');
+  if (dot) {
+    dot.className = 'status-dot ' + (wsConnected ? 'on' : 'off');
+    dot.title = wsConnected ? '已连接' : '未连接（自动重连中）';
+  }
+}
+
 // —— WebSocket 实时同步 ——
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
-  const ws = new WebSocket(proto + location.host);
+  let ws;
+  try { ws = new WebSocket(proto + location.host); } catch (e) { scheduleReconnect(); return; }
+  ws.onopen = () => { wsConnected = true; updateStatus(); };
   ws.onmessage = e => {
     let data;
     try { data = JSON.parse(e.data); } catch (err) { return; }
     if (data.type === 'history') {
+      renderedIds.clear();
       chat.innerHTML = '';
+      emptyTip = null;
       data.messages.forEach(renderMessage);
     } else if (data.type === 'message') {
       renderMessage(data.message);
     }
   };
-  ws.onclose = () => setTimeout(connectWS, 2000);
+  ws.onclose = () => { wsConnected = false; updateStatus(); scheduleReconnect(); };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+
+  function scheduleReconnect() { setTimeout(connectWS, 2000); }
 }
 connectWS();
 
-// —— 发送文本 ——
-function sendText() {
+// —— 发送文本（乐观更新：拿到响应立即渲染，不依赖 WS）——
+async function sendText() {
   const input = $('input');
   const content = input.value.trim();
   if (!content) return;
-  fetch('/api/message', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, device: deviceId })
-  }).catch(() => {});
+  try {
+    const res = await fetch('/api/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, device: deviceId })
+    });
+    const data = await res.json();
+    if (data.message) renderMessage(data.message);
+  } catch (e) {
+    alert('发送失败：无法连接服务器');
+    return;
+  }
   input.value = '';
   input.focus();
 }
@@ -106,7 +135,11 @@ async function uploadFile(file) {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('device', deviceId);
-  try { await fetch('/api/upload', { method: 'POST', body: fd }); } catch (e) {}
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.message) renderMessage(data.message);
+  } catch (e) { alert('文件发送失败'); }
 }
 
 // —— 显示局域网地址 ——

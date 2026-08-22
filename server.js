@@ -72,7 +72,7 @@ app.post('/api/message', express.json(), (req, res) => {
   messages.push(msg);
   saveMessages();
   broadcast({ type: 'message', message: msg });
-  res.json({ ok: true });
+  res.json({ ok: true, message: msg });
 });
 
 // —— 消息历史 ——
